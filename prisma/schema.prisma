@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
+	shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+// **ENTREPRISE** (<ins>id_entreprise</ins>, nom, pays)  
+// **AVIS** (<ins>_pseudo_</ins>, <ins>_id_jeux_</ins>, note, commentaire)  
+// **EST AMI(E)** (<ins>_pseudo_joueur_1_</ins>, <ins>_pseudo_joueur_2_</ins>)  
+// **JEUX** (<ins>id_jeux</ins>, titre, date_sortie, prix, age_requis, description_jeux, _id_editeur_, _id_developpeur_)  
+// **PARTAGER** (<ins>_pseudo_joueur_1_</ins>, <ins>_id_jeux_</ins>, <ins>_pseudo_joueur_2_</ins>)  
+// **JOUEUR** (<ins>pseudo</ins>, passwd, nom, adress_mail, date_naissance, monnaie)  
+// **DEBLOQUE** (<ins>_num_succes_</ins>, <ins>_pseudo_</ins>, date)  
+// **ACHAT** (<ins>_id_jeux_</ins>, <ins>_pseudo_</ins>)  
+// **APPARTIENT** (<ins>_id_jeux_</ins>, <ins>_type_</ins>)  
+// **SUCCES** (<ins>num_succes</ins>, intitule, conditions, _id_jeux_)
+
+model Entreprise {
+	id_entreprise 	Int 	@id @default(autoincrement())
+  	nom           	String 	@db.VarChar(255)
+  	pays          	String 	@db.VarChar(100)
+	editeurJeu 		Jeu[] 	@relation("EditeurJeu")
+	developpeurJeu	Jeu[] 	@relation("DeveloppeurJeu")
+}
+
+model Jeu {
+	id_jeux 			Int 		@id @default(autoincrement())
+	titre   			String 		@db.VarChar(255)
+	date_sortie 		DateTime
+	prix    			Float
+	age_requis 			Int
+	description_jeux 	String
+	editeur 			Entreprise	@relation("EditeurJeu", fields: [id_editeur], references: [id_entreprise])
+	id_editeur 			Int
+	developpeur 		Entreprise	@relation("DeveloppeurJeu", fields: [id_developpeur], references: [id_entreprise])
+	id_developpeur 		Int
+	succes 				Succes[] 	@relation("SuccesJeu")
+	appartient 			Appartient[] 	@relation("AppartientGenre")
+	achat 				Achat[] 	@relation("AchatJeu")
+	partage 			Partager[] 	@relation("JeuPartage")
+}
+
+model Succes {
+	num_succes 			Int 		@id @default(autoincrement())
+	intitule 			String 		@db.VarChar(255)
+	conditions 			String 		
+	jeu 				Jeu 		@relation("SuccesJeu", fields: [id_jeux], references: [id_jeux])
+	id_jeux 			Int
+	debloque 			Debloque[] 	@relation("SuccesDebloque")
+}
+
+model Joueur {
+	pseudo 				String 		@db.VarChar(255) @id @default(cuid())
+	passwd 				String 		@db.VarChar(255)
+	nom 				String 		@db.VarChar(255)
+	adress_mail 		String 		@db.VarChar(255)
+	date_naissance 		DateTime
+	monnaie 			Float
+	estAmi 				EstAmi[] 	@relation("EstAmi")
+	avec				EstAmi[] 	@relation("Avec")
+	achat 				Achat[] 	@relation("AchatJoueur")
+	partager 			Partager[] 	@relation("Partager")
+	avecAmi				Partager[] 	@relation("AvecAmi")
+	debloque 			Debloque[] 	@relation("Debloque")
+}
+
+model EstAmi {
+	joueur_1 			Joueur		@relation("EstAmi", fields: [pseudo_joueur_1], references: [pseudo])
+	pseudo_joueur_1 	String 		@db.VarChar(255)
+	joueur_2 			Joueur		@relation("Avec", fields: [pseudo_joueur_2], references: [pseudo])
+	pseudo_joueur_2 	String 		@db.VarChar(255)
+	@@id([pseudo_joueur_1, pseudo_joueur_2])
+}
+
+model Debloque {
+	succes 				Succes 		@relation("SuccesDebloque", fields: [num_succes], references: [num_succes])
+	num_succes 			Int 		
+	joueur 				Joueur 		@relation("Debloque", fields: [pseudo], references: [pseudo])
+	pseudo 				String 		@db.VarChar(255)
+	date 				DateTime
+	@@id([num_succes, pseudo])
+}
+
+model Appartient {
+	id_jeux 			Int 		
+	genre 				String 		@db.VarChar(255)
+	jeu 				Jeu 		@relation("AppartientGenre", fields: [id_jeux], references: [id_jeux])
+	@@id([id_jeux, genre])
+}
+
+model Achat {
+	id_jeux 			Int 		
+	pseudo 				String 		@db.VarChar(255)
+	jeu 				Jeu 		@relation("AchatJeu", fields: [id_jeux], references: [id_jeux])
+	joueur 				Joueur 		@relation("AchatJoueur", fields: [pseudo], references: [pseudo])
+	@@id([id_jeux, pseudo])
+}
+
+model Partager {
+	jeu 				Jeu 		@relation("JeuPartage", fields: [id_jeux], references: [id_jeux])
+	id_jeux 			Int
+	joueur_1 			Joueur		@relation("Partager", fields: [pseudo_joueur_1], references: [pseudo])
+	pseudo_joueur_1 	String 		@db.VarChar(255)
+	joueur_2 			Joueur		@relation("AvecAmi", fields: [pseudo_joueur_2], references: [pseudo])
+	pseudo_joueur_2 	String 		@db.VarChar(255)
+	@@id([pseudo_joueur_1, pseudo_joueur_2])
+	@@unique([pseudo_joueur_1, id_jeux])
+}
+
+// model Avis {
+// 	pseudo      	String @id
+// 	id_jeux     	Int  
+// 	note          	Int
+// 	commentaire   	String
+// }
