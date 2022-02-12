@@ -1,0 +1,66 @@
+version: '3'
+services:
+  webapp:
+    build: .
+    ports:
+      - 80:80
+      - 3000:3000
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - PORT=3000
+    # env_file:
+    #   - ./.env
+    depends_on:
+      - serviceName: db
+  
+  db:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres-db:/data/db
+
+volumes:
+  postgres-db:
+
+# docker-compose up -d to start the containers
+# docker-compose up -d --build to build the containers before starting them
+# docker-compose down -v to stop the containers and remove the volumes
+# docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d to start the containers with the overrides
+
+version: '3'
+services:
+  restapi:
+    build:
+      context: .
+      args:
+        NODE_ENV: dev
+    ports:
+      - 3000:3000
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - PORT=3000
+    command: npm run start
+  
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=nuage
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  db-data:

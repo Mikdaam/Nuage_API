@@ -4,7 +4,9 @@
   "description": "L'implémentation du projet base de données",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "start": "node build/index.js",
+    "build": "rm -rf build && npx tsc",
+    "dev": "ts-node-dev --respawn --poll --transpile-only src/app.ts",
     "test": "test"
   },
   "keywords": [
